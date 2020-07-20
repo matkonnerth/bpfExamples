@@ -4,9 +4,15 @@ BEGIN
     @lastSendTo=0;
 }
 
+//uprobe in publisher
+uprobe:/home/matzy/git/openOpen/build/bin/examples/tutorial_pubsub_publish:UA_WriterGroup_publishCallback 
+{
+    printf("%d: publishcallback\n", (nsecs-@start)/1000);
+}
+
 tracepoint:syscalls:sys_enter_sendto /pid==3576/
 {
-    printf("sys_enter_sendto: at %d us pid: %s length: %d fd: %d\n", (nsecs-@start)/1000, comm, args->len, args->fd);
+    printf("%d: sys_enter_sendto, pid: %s length: %d fd: %d\n", (nsecs-@start)/1000, comm, args->len, args->fd);
     @sys_enter_sendto_ns = nsecs;
     if(@lastSendTo)
     {
@@ -14,13 +20,13 @@ tracepoint:syscalls:sys_enter_sendto /pid==3576/
         @intervall_us = lhist($diff/1000, 0, 200000, 10000);
     }
     @lastSendTo=nsecs;
+    //@[ustack] = count();
 }
 
 kprobe:ip_send_skb /pid==3576/
 {
-    printf("ip_send_skb: at %d: skbuf: %p\n", (nsecs-@start)/1000, arg1);
+    printf("%d, ip_send_skb, skbuf: %p\n", (nsecs-@start)/1000, arg1);
     @sys_enter_sendto_ns_skbuf[arg1]=@sys_enter_sendto_ns;
-    printf("sys_enter_ns_skbuf: %d\n", @sys_enter_sendto_ns_skbuf[arg1]);
 }
 
 tracepoint:skb:consume_skb
@@ -28,8 +34,7 @@ tracepoint:skb:consume_skb
     $sys_enter_ns = @sys_enter_sendto_ns_skbuf[args->skbaddr];
     if($sys_enter_ns)
     {
-        printf("skb_consume_skb: at %d, skbaddr: %p\n", (nsecs-@start)/1000, args->skbaddr);
-        printf("sys_enter_ns: %d\n", $sys_enter_ns);
+        printf("%d, skb_consume_skb, skbaddr: %p\n", (nsecs-@start)/1000, args->skbaddr);
         $delta_ns = nsecs - $sys_enter_ns;
         @latency_us = lhist($delta_ns/1000, 0, 1000, 50);
         delete(@sys_enter_sendto_ns_skbuf[args->skbaddr]);

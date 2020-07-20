@@ -25,6 +25,7 @@ https://blog.packagecloud.io/eng/2017/02/06/monitoring-tuning-linux-networking-s
 
 //gives you the user space stack trace for syscall sys_enter_sendto
 sudo bpftrace -e 'tracepoint:syscalls:sys_enter_sendto { @[ustack()] = count(); }'
+@[ustack] = count();
 
 
 
