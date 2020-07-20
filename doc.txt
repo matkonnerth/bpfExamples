@@ -1,0 +1,44 @@
+useful commands
+
+search for tracepoints, kprobes, uprobes
+bpftrace -lv "*sys_enter_sendto*"
+
+search for tracepoints
+sudo perf trace --no-syscalls --event 'net:*'
+
+list events
+sudo ls /sys/kernel/debug/tracing/events
+
+links:
+https://github.com/iovisor/bpftrace
+https://blog.packagecloud.io/eng/2017/02/06/monitoring-tuning-linux-networking-stack-sending-data/
+
+
+//is called when skb was sent by net device
+//tracepoint:skb:consume_skb
+//{
+//    printf("consume_skb: %p\n", args->skbaddr);
+//    //printf("socket: %p\n", ((struct sk_buff*)args->skbaddr)->sk);
+//}
+
+//getting the stack
+
+//gives you the user space stack trace for syscall sys_enter_sendto
+sudo bpftrace -e 'tracepoint:syscalls:sys_enter_sendto { @[ustack()] = count(); }'
+
+
+
+stack trace for udp send to:
+
+                                        dev_hard_start_xmit
+                                        __qdisc_run             //qdisc
+                                        __dev_queue_xmit
+                                        netdev_pick_tx          //picking the right transmit queue
+network device subsystem:               dev_queue_xmit
+                                        ip_send_skb
+ip:                                     ip_make_skb             //has as input the struct sock* sk, output is struct sk_buff*
+                                        udp_send_skb
+udp                                     udp_sendmsg
+                                        sock_sendmsg
+kernelspace:                            sys_enter_sendto
+userspace:                              libc_sendto
