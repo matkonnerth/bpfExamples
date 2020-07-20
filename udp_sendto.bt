@@ -1,5 +1,13 @@
 BEGIN 
 { 
+    printf("traces the way of a udp packet through kernel\n");
+    printf("parameters: pid of publisher %d\n", $1);
+    @publisherPid=$1;
+    if(!@publisherPid)
+    {
+        printf("pid of publisher must be passed, exiting\n");
+        exit();
+    }
     @start = nsecs;
     @lastSendTo=0;
 }
@@ -10,7 +18,7 @@ uprobe:/home/matzy/git/openOpen/build/bin/examples/tutorial_pubsub_publish:UA_Wr
     printf("%d: publishcallback\n", (nsecs-@start)/1000);
 }
 
-tracepoint:syscalls:sys_enter_sendto /pid==3576/
+tracepoint:syscalls:sys_enter_sendto /pid==@publisherPid/
 {
     printf("%d: sys_enter_sendto, pid: %s length: %d fd: %d\n", (nsecs-@start)/1000, comm, args->len, args->fd);
     @sys_enter_sendto_ns = nsecs;
@@ -23,7 +31,7 @@ tracepoint:syscalls:sys_enter_sendto /pid==3576/
     //@[ustack] = count();
 }
 
-kprobe:ip_send_skb /pid==3576/
+kprobe:ip_send_skb /pid==@publisherPid/
 {
     printf("%d, ip_send_skb, skbuf: %p\n", (nsecs-@start)/1000, arg1);
     @sys_enter_sendto_ns_skbuf[arg1]=@sys_enter_sendto_ns;
