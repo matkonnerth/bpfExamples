@@ -3,6 +3,10 @@ useful commands
 search for tracepoints, kprobes, uprobes
 bpftrace -lv "*sys_enter_sendto*"
 
+// getting a fast overview of systemcalls
+perf trace -p <PidToTrace>
+
+
 search for tracepoints
 sudo perf trace --no-syscalls --event 'net:*'
 
@@ -43,3 +47,22 @@ udp                                     udp_sendmsg
                                         sock_sendmsg
 kernelspace:                            sys_enter_sendto
 userspace:                              libc_sendto
+
+
+integration with visualization:
+https://blog.cloudflare.com/introducing-ebpf_exporter/
+
+books:
+"BPF Performance tools - Linux System and Application Observability" by Brendan Gregg
+
+Open questions:
+pubsub related:
+    comparison of uadp over udp vs. ethernet
+xdp
+nsecs: what clock is used?
+performance overhead of bpf
+
+Would be good to show the packet travelling down to the net device in comparison to the active threads on cpu?
+
+off cpu analysis
+http://www.brendangregg.com/offcpuanalysis.html
